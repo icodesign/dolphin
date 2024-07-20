@@ -1,0 +1,25 @@
+{
+  "name": "dolphin",
+  "version": "0.1.0",
+  "description": "Dolphin is an innovative, automated internationalization (i18n) service designed to integrate seamlessly into your development pipeline.",
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "localization",
+    "l10n",
+    "ai",
+    "artificial intelligence",
+    "translation",
+    "nlp",
+    "dolphin"
+  ],
+  "author": "Lance Wang (icodesign)",
+  "license": "MIT",
+  "dependencies": {
+    "typescript": "^5.5.0"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+    "prettier": "^3.3.0"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@repo/ioloc",
+  "version": "1.0.0",
+  "description": "Exporting and importing localization strings",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./xliff": "./src/xliff/index.ts",
+    "./export": "./src/export/index.ts",
+    "./import": "./src/import/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@repo/base": "workspace:*",
+    "@bacons/xcode": "1.0.0-alpha.14",
+    "xliff": "^6.2.0",
+    "xml-js": "^1.6.11"
+  },
+  "devDependencies": {
+    "@types/shelljs": "^0.8.12",
+    "@repo/typescript-config": "workspace:*",
+    "vitest": "^1.1.0"
+  }
+}
