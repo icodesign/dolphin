@@ -8,6 +8,18 @@
 
 <!--te-->
 
+## How it works?
+
+Dolphin is an automation tool that helps you to localize your app/website strings. It can automatically export, translate and import strings in your projects.
+
+The process is simple to understand:
+
+1. **Export** the strings from your project based on configuration.
+
+2. **Translate** and review the strings to the target languages using the specified translator.
+
+3. **Import** the translated strings back to your project.
+
 ## Usage
 
 Dolphin requires a configuration file to desribe the translation strings and preferred options.
@@ -30,7 +42,17 @@ localizations:
       - zh-Hans
 ```
 
-It means that Dolphin will look for a file named `Localizable.strings` in the `TranditionalXcodeDemo/en.lproj` directory whose format is `Apple Localized Strings`. And then translate it to French, Japanese, and Simplified Chinese with `openai`.
+It means that Dolphin will look for a file named `Localizable.strings` in the `TranditionalXcodeDemo/en.lproj` directory whose format is `Apple Localized Strings`. And then translate it to French, Japanese, and Simplified Chinese with `api` translation agent.
+
+> What is `api` agent here? It is a Dolphin API service. You can find the related code of the API service (using Next.js as an example) in the [api folder](https://github.com/icodesign/dolphin/tree/main/apps/api/).
+>
+> You can deploy the API service to your own server or managed platforms (like Vercel) and change the `baseUrl` to your server address.
+>
+> Deploy to Vercel with a single click:
+>
+> [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Ficodesign%2Fdolphin&env=OPENAI_API_KEY&envDescription=The%20openai%20api%20key&envLink=https%3A%2F%2Fplatform.openai.com%2Fapi-keys)
+>
+> We're working on adding more agents, especially local agents without the need of cloud deployment.
 
 For more details on how to write a configuration file, please check the [Configuration](#Configuration) section.
 
@@ -96,7 +118,7 @@ The source language of the strings, which is used to translate from.
 
 Supported translators:
 
-- **api**: Dolphin API. You need to provide the `baseUrl` to the API endpoint. An example of the API service can be found in the [api folder](https://github.com/icodesign/dolphin/tree/main/apps/api/).
+- **api**: Dolphin API. You need to provide the `baseUrl` to the API endpoint.
 
 Supported modes:
 
