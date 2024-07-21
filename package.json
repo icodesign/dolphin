@@ -1,19 +1,7 @@
 {
-  "name": "@icodesign/dolphin",
-  "version": "0.1.0",
+  "name": "dolphin",
   "private": true,
   "description": "Dolphin is an innovative, automated internationalization (i18n) service designed to integrate seamlessly into your development pipeline.",
-  "keywords": [
-    "i18n",
-    "internationalization",
-    "localization",
-    "l10n",
-    "ai",
-    "artificial intelligence",
-    "translation",
-    "nlp",
-    "dolphin"
-  ],
   "author": "Lance Wang (icodesign)",
   "license": "MIT",
   "repository": {
@@ -21,7 +9,8 @@
     "url": "https://github.com/icodesign/dolphin"
   },
   "scripts": {
-    "ci:publish": "pnpm publish -r"
+    "ci:version": "pnpm changeset version",
+    "ci:publish": "pnpm publish -r --access public"
   },
   "dependencies": {
     "typescript": "^5.5.0"
@@ -29,6 +18,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.27.7",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+    "clean-publish": "^5.0.0",
     "prettier": "^3.3.0"
   }
 }

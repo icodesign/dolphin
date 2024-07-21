@@ -32,16 +32,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build package
-        run: pnpm run --filter @icodesign/dolphin build
-
-      - name: Make sure build artifacts are created (apps/cli/dist/index.cjs)
-        run: |
-          if [ ! -f "apps/cli/dist/index.cjs" ]; then
-            echo "Build artifacts does not exist. Exiting."
-            exit 1
-          fi
-
       - name: Create and publish versions
         uses: changesets/action@v1
         with:

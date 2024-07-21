@@ -1,10 +1,38 @@
 {
   "name": "@icodesign/dolphin",
-  "version": "1.0.0",
-  "exports": "./dist/index.js",
-  "bin": "./dist/index.cjs",
+  "version": "0.3.0",
+  "main": "./dist/index.cjs",
+  "bin": "./bin/cli.cjs",
   "type": "module",
   "description": "Dolphin is an innovative, automated internationalization (i18n) service designed to integrate seamlessly into your development pipeline.",
+  "author": "Lance Wang (icodesign)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/icodesign/dolphin"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "directory": "package"
+  },
+  "clean-publish": {
+    "withoutPublish": true,
+    "tempDir": "package"
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "tsup",
+    "dev": "tsc -w --preserveWatchOutput",
+    "start": "node dist/index.cjs",
+    "start:debug": "node --inspect-brk dist/index.cjs",
+    "prepack": "pnpm build",
+    "prepublishOnly": "rm -rf ./package && clean-publish --fields 'dependencies,publishConfig' && cp ../../README.md ../../LICENSE ./package",
+    "postpublish": "rm -rf ./package",
+    "pkg:mac": "NODE_ENV=production pkg . --no-bytecode --public-packages '*' --public --targets node18-macos-x64,node18-macos-arm64 -o dist/bin/dolphin-macos",
+    "pkg:mac:compressed": "NODE_ENV=production pkg . --no-bytecode --public-packages '*' --public --targets node18-macos-x64,node18-macos-arm64 --compress Brotli -o dist/bin/dolphin-macos"
+  },
   "keywords": [
     "i18n",
     "internationalization",
@@ -16,21 +44,6 @@
     "nlp",
     "dolphin"
   ],
-  "author": "Lance Wang (icodesign)",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/icodesign/dolphin"
-  },
-  "scripts": {
-    "clean": "rimraf dist",
-    "build": "tsup",
-    "dev": "tsc -w --preserveWatchOutput",
-    "start": "node dist/index.cjs",
-    "start:debug": "node --inspect-brk dist/index.cjs",
-    "pkg:mac": "NODE_ENV=production pkg . --no-bytecode --public-packages '*' --public --targets node18-macos-x64,node18-macos-arm64 -o dist/bin/dolphin-macos",
-    "pkg:mac:compressed": "NODE_ENV=production pkg . --no-bytecode --public-packages '*' --public --targets node18-macos-x64,node18-macos-arm64 --compress Brotli -o dist/bin/dolphin-macos"
-  },
   "dependencies": {
     "@repo/base": "workspace:*",
     "@repo/ioloc": "workspace:*",
