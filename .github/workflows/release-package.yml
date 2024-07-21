@@ -20,7 +20,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
-          version: 8
+          version: 9.4.0
           run_install: false
 
       - name: Install Node.js
@@ -45,7 +45,9 @@ jobs:
       - name: Create and publish versions
         uses: changesets/action@v1
         with:
-          publish: pnpm publish
+          commit: 'CI: Version Packages'
+          title: 'CI: Version Packages'
+          publish: pnpm ci:publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
