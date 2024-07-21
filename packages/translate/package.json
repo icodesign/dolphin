@@ -2,6 +2,7 @@
   "name": "@repo/translate",
   "version": "1.0.0",
   "description": "Translate strings using various service providers",
+  "private": true,
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

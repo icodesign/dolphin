@@ -6,7 +6,7 @@ export default defineConfig({
   sourcemap: true,
   minify: process.env.NODE_ENV === 'production' ? true : false,
   noExternal: [/./],
-  format: ['cjs', 'esm'],
+  format: ['cjs'],
   target: 'node18',
   clean: true,
 });
