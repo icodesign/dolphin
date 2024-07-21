@@ -137,6 +137,7 @@ importers:
       webpack-cli:
         specifier: ^5.1.4
         version: 5.1.4(webpack@5.89.0)
+    publishDirectory: package
 
   packages/base:
     dependencies:
