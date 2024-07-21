@@ -1,6 +1,6 @@
 name: Release Package
 on:
-  workflow_call:
+  workflow_dispatch:
     secrets:
       NPM_TOKEN:
         required: true
