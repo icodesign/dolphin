@@ -1,5 +1,5 @@
 {
-  "name": "@dolphin/cli",
+  "name": "@icodesign/dolphin",
   "version": "1.0.0",
   "exports": "./dist/index.js",
   "bin": "./dist/index.cjs",
@@ -18,6 +18,10 @@
   ],
   "author": "Lance Wang (icodesign)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/icodesign/dolphin"
+  },
   "scripts": {
     "clean": "rimraf dist",
     "build": "tsup",

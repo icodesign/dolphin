@@ -2,6 +2,7 @@
 
 <!--ts-->
 
+- [Installation](#Installation)
 - [Usage](#Usage)
 - [Configuration](#Configuration)
 - [Troubleshooting](#Troubleshooting)
@@ -19,6 +20,20 @@ The process is simple to understand:
 2. **Translate** and review the strings to the target languages using the specified translator.
 
 3. **Import** the translated strings back to your project.
+
+## Installation
+
+Install Dolphin globally with npm/pnpm/yarn:
+
+```shell
+npm install -g @icodesign/dolphin
+```
+
+Check if the installation is successful by running:
+
+```shell
+dolphin --version
+```
 
 ## Usage
 
@@ -42,19 +57,27 @@ localizations:
       - zh-Hans
 ```
 
-It means that Dolphin will look for a file named `Localizable.strings` in the `TranditionalXcodeDemo/en.lproj` directory whose format is `Apple Localized Strings`. And then translate it to French, Japanese, and Simplified Chinese with `api` translation agent.
+It means that Dolphin will look for a file named `Localizable.strings` in the `TranditionalXcodeDemo/en.lproj` directory whose format is `Apple Localized Strings`. And then translate it to French, Japanese, and Simplified Chinese with the `api` translator.
 
-> What is `api` agent here? It is a Dolphin API service. You can find the related code of the API service (using Next.js as an example) in the [api folder](https://github.com/icodesign/dolphin/tree/main/apps/api/).
+For more details on how to write a configuration file, please check the [Configuration](#Configuration) section.
+
+### Translator
+
+Dolphin defines an interface for translators to implement, which is responsible for translating source strings into target languages.
+
+#### api
+
+The `api` translator is a built-in translator that uses the Dolphin API service to translate strings. You need to provide the `baseUrl` to the API endpoint.
+
+> Related code of the API service (using Next.js as an example) can be found in the [api folder](https://github.com/icodesign/dolphin/tree/main/apps/api/).
 >
 > You can deploy the API service to your own server or managed platforms (like Vercel) and change the `baseUrl` to your server address.
 >
 > Deploy to Vercel with a single click:
 >
 > [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Ficodesign%2Fdolphin&env=OPENAI_API_KEY&envDescription=The%20openai%20api%20key&envLink=https%3A%2F%2Fplatform.openai.com%2Fapi-keys)
->
-> We're working on adding more agents, especially local agents without the need of cloud deployment.
 
-For more details on how to write a configuration file, please check the [Configuration](#Configuration) section.
+We're working on adding more agents, especially local translators without the need of cloud deployment. PRs are welcome!
 
 ### Running Dolphin
 

@@ -1,5 +1,5 @@
 {
-  "name": "dolphin",
+  "name": "@icodesign/dolphin",
   "version": "0.1.0",
   "description": "Dolphin is an innovative, automated internationalization (i18n) service designed to integrate seamlessly into your development pipeline.",
   "keywords": [
@@ -15,6 +15,10 @@
   ],
   "author": "Lance Wang (icodesign)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/icodesign/dolphin"
+  },
   "dependencies": {
     "typescript": "^5.5.0"
   },
