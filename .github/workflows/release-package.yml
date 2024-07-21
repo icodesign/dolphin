@@ -1,15 +1,14 @@
 name: Release Package
 on:
-  workflow_dispatch:
-    secrets:
-      NPM_TOKEN:
-        required: true
+  push:
+    branches:
+      - main
+
 env:
   CI: true
-  PNPM_CACHE_FOLDER: .pnpm-store
 
 jobs:
-  version:
+  release:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
@@ -18,19 +17,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup node.js
-        uses: actions/setup-node@v3
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 8
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 18
-
-      - name: install pnpm
-        run: npm i pnpm@latest -g
+          cache: 'pnpm'
 
       - name: Setup npmrc
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-
-      - name: Setup pnpm config
-        run: pnpm config set store-dir $PNPM_CACHE_FOLDER
 
       - name: Install dependencies
         run: pnpm install
