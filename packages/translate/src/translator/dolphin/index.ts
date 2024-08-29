@@ -1,4 +1,8 @@
-import { Config, TranslationProvider } from '@repo/base/config';
+import {
+  Config,
+  LLMTranslatorConfig,
+  LLMTranslatorConfigSchema,
+} from '@repo/base/config';
 import { logger } from '@repo/base/logger';
 import { ObjectStreamPart } from 'ai';
 import fetch from 'node-fetch';
@@ -8,6 +12,7 @@ import { TranslationBatch, createBatches } from '../../batch.js';
 import { LocalizationEntity } from '../../entity.js';
 import { calTokens } from '../../utils.js';
 import { Translator } from '../index.js';
+import { translateEntities } from '../translation.js';
 
 export type DolphinTokenUsage = {
   promptTokens: number;
@@ -18,13 +23,11 @@ export type DolphinTokenUsage = {
 export class DolphinAPITranslator implements Translator {
   usage: DolphinTokenUsage;
   maxRetry: number;
-  baseModel = 'gpt-4'; // this is not the real model used for translation, but for token calculation when creating batches
+  translatorConfig?: LLMTranslatorConfig;
+  provider: string = 'openai';
 
   constructor(
     private apiBaseUrl: string,
-    private provider: TranslationProvider,
-    private maxTokens: number,
-    private buffer: number,
     maxRetry: number = 1,
   ) {
     this.usage = {
@@ -35,113 +38,58 @@ export class DolphinAPITranslator implements Translator {
     this.maxRetry = maxRetry;
   }
 
+  async config(): Promise<LLMTranslatorConfig> {
+    if (this.translatorConfig) {
+      return this.translatorConfig;
+    }
+    const url = new URL(this.apiBaseUrl);
+    url.pathname += url.pathname.endsWith('/') ? 'config' : '/config';
+    logger.info(`Fetching translator config from ${url}`);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (response.status < 200 || response.status >= 400) {
+      try {
+        const json = await response.json();
+        throw new Error(
+          `Failed to fetch translator config: ${
+            response.status
+          }, body: ${JSON.stringify(json)}`,
+        );
+      } catch (error) {
+        throw new Error(
+          `Failed to fetch translator config: ${response.status}, body: ${error}`,
+        );
+      }
+    }
+    const responseJson = await response.json();
+    const configResult = LLMTranslatorConfigSchema.safeParse(responseJson);
+    if (!configResult.success) {
+      throw new Error(
+        `Failed to parse localizer config: ${configResult.error}`,
+      );
+    }
+    this.translatorConfig = configResult.data;
+    return configResult.data;
+  }
+
   async translate(
     entities: LocalizationEntity[],
     config: Config,
     onProgress?: (progress: number) => void,
   ): Promise<LocalizationEntity[]> {
-    if (entities.length === 0) {
-      logger.info(`No entity to translate`);
-      return [];
-    }
-
-    const batches = createBatches(entities, {
-      maxTokens: this.maxTokens,
-      buffer: this.buffer,
-      provider: this.provider,
-      model: this.baseModel,
+    return translateEntities({
+      entities,
+      config,
+      agent: 'api',
+      maxRetry: this.maxRetry,
+      translationConfig: this.config.bind(this),
+      translationBatch: this.translateBatch.bind(this),
+      onProgress,
     });
-
-    let totalCount = batches.reduce(
-      (total, batch) =>
-        total + batch.contents.length * batch.targetLanguages.length,
-      0,
-    );
-    let translatedCount = 0;
-    const maxPercentage = 0.92 + Math.random() * 0.08;
-
-    logger.info(
-      `Translating ${batches.length} batches with dolphin api agent <${this.provider}>...`,
-    );
-    let failedBatches: TranslationBatch[] = [];
-    for (let [batchIndex, batch] of batches.entries()) {
-      logger.info(
-        `Translating batch<${batchIndex}>: ${
-          batch.sourceLanguage
-        } -> ${batch.targetLanguages.join(', ')}`,
-      );
-      const firstTargetLanguage = batch.targetLanguages[0];
-      if (!firstTargetLanguage) {
-        continue;
-      }
-      let currentRetry = 1;
-      let translatedContents: Record<string, Record<string, string>> = {};
-      let latestError: Error | undefined;
-      while (currentRetry <= this.maxRetry) {
-        try {
-          translatedContents = await this.translateBatch({
-            batch,
-            config,
-            translatedCount,
-            totalCount,
-            maxPercentage,
-            onProgress,
-          });
-          break;
-        } catch (error) {
-          logger.error(
-            `Failed to translate, retrying ${currentRetry}/${this.maxRetry}, error: ${error}`,
-          );
-          latestError = error as Error;
-        }
-        currentRetry += 1;
-      }
-      if (currentRetry > this.maxRetry) {
-        logger.error(
-          `Failed to translate batch<${batchIndex}> after ${
-            this.maxRetry
-          } retries. Latest error: ${JSON.stringify(
-            latestError,
-          )}. Skip to next batch. Please view the logs for more details.`,
-        );
-        failedBatches.push(batch);
-        continue;
-      }
-      for (const key in translatedContents) {
-        const translated = translatedContents[key]!;
-        for (const entity of entities) {
-          if (entity.key === key) {
-            for (const lang in translated) {
-              if (!entity.target) {
-                entity.target = {};
-              }
-              entity.target[lang] = {
-                value: translated[lang]!,
-                state: 'translated',
-                notes: entity.target[lang]?.notes || [],
-              };
-            }
-          }
-        }
-      }
-      translatedCount += batch.targetLanguages.length * batch.contents.length;
-
-      if (onProgress) {
-        onProgress(translatedCount / totalCount);
-      }
-    }
-
-    if (failedBatches.length > 0) {
-      logger.warn(`Failed to translate ${failedBatches.length} batches`);
-      for (const batch of failedBatches) {
-        logger.warn(
-          `Failed batch: ${batch.sourceLanguage} -> ${batch.targetLanguages.join(
-            ', ',
-          )}`,
-        );
-      }
-    }
-    return entities;
   }
 
   additionalInfo() {
@@ -153,6 +101,7 @@ export class DolphinAPITranslator implements Translator {
   private async translateBatch({
     batch,
     config,
+    translatorConfig,
     translatedCount,
     totalCount,
     maxPercentage,
@@ -160,6 +109,7 @@ export class DolphinAPITranslator implements Translator {
   }: {
     batch: TranslationBatch;
     config: Config;
+    translatorConfig: LLMTranslatorConfig;
     translatedCount: number;
     totalCount: number;
     maxPercentage: number;
@@ -197,7 +147,8 @@ export class DolphinAPITranslator implements Translator {
         );
       }
     }
-    const expectedChunkTokenCount = batch.expectedTokens * (1 + this.buffer);
+    const expectedChunkTokenCount =
+      batch.expectedTokens * (1 + translatorConfig.buffer);
     let receivedChunkTokenCount = 0;
     const TranslationReponseSchema = z.record(
       z.string(),
@@ -245,8 +196,8 @@ export class DolphinAPITranslator implements Translator {
             } else {
               translationResponse = parseResult.data;
               receivedChunkTokenCount += calTokens(
-                this.provider,
-                this.baseModel,
+                translatorConfig.tokenizer,
+                translatorConfig.tokenizerModel,
                 JSON.stringify(object.object),
               );
               if (onProgress) {

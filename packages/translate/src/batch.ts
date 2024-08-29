@@ -1,4 +1,4 @@
-import { TranslationProvider } from '@repo/base/config';
+import { TranslationTokenizer } from '@repo/base/config';
 import { logger } from '@repo/base/logger';
 
 import { LocalizationEntity } from './entity.js';
@@ -21,8 +21,8 @@ export function createBatches(
   config: {
     maxTokens: number;
     buffer: number;
-    provider: TranslationProvider;
-    model: string;
+    tokenizer: TranslationTokenizer;
+    tokenizerModel: string;
   },
 ): TranslationBatch[] {
   if (entities.length === 0) {
@@ -44,8 +44,8 @@ export function createBatches(
     }
 
     const expectedTokens = calEntityExpectedTokens(
-      config.provider,
-      config.model,
+      config.tokenizer,
+      config.tokenizerModel,
       entity,
     );
     if (expectedTokens > maxSafeTokens) {
@@ -85,8 +85,8 @@ export function createBatches(
             },
           ],
           sourceTokens: calEntitySourceTokens(
-            config.provider,
-            config.model,
+            config.tokenizer,
+            config.tokenizerModel,
             entity,
           ),
           expectedTokens: expectedTokens * group.length,
@@ -95,8 +95,8 @@ export function createBatches(
     } else {
       let currentExpectedTokens = expectedTokens;
       let currentSourceTokens = calEntitySourceTokens(
-        config.provider,
-        config.model,
+        config.tokenizer,
+        config.tokenizerModel,
         entity,
       );
       let similarEntities = [entity];
@@ -108,8 +108,8 @@ export function createBatches(
         ) {
           const expectedTokens =
             calEntityExpectedTokens(
-              config.provider,
-              config.model,
+              config.tokenizer,
+              config.tokenizerModel,
               remainingEntity,
             ) * remainingTargetLanguages.length;
           if (currentExpectedTokens + expectedTokens > maxSafeTokens) {
@@ -119,8 +119,8 @@ export function createBatches(
             remainings.delete(remainingEntity);
             currentExpectedTokens += expectedTokens;
             currentSourceTokens += calEntitySourceTokens(
-              config.provider,
-              config.model,
+              config.tokenizer,
+              config.tokenizerModel,
               remainingEntity,
             );
           }

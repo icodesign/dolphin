@@ -1,11 +1,6 @@
 import input from '@inquirer/input';
 import select from '@inquirer/select';
-import {
-  Config,
-  LLMProviderConfigSchema,
-  LLMTranslatorConfigSchema,
-  TranslatorConfig,
-} from '@repo/base/config';
+import { Config, TranslatorConfig } from '@repo/base/config';
 import { logger } from '@repo/base/logger';
 import { Spinner } from '@repo/base/spinner';
 import { Xliff, parseXliff2Path } from '@repo/ioloc/xliff';
@@ -27,6 +22,7 @@ import {
 } from './entity.js';
 import { DolphinAPITranslator } from './translator/dolphin/index.js';
 import { Translator } from './translator/index.js';
+import { OpenAITranslator } from './translator/openai/index.js';
 
 export enum TranslationMode {
   AUTOMATIC = 'automatic', // No user interaction needed. The program will find the most suitable translation for each string.
@@ -156,20 +152,15 @@ async function translateStrings(
   let translator: Translator;
   const agent = config.translator.agent;
   if (agent === 'api') {
-    const remoteConfig = await fetchApiConfig({
-      baseUrl: config.translator.baseUrl,
-    });
-    translator = new DolphinAPITranslator(
-      config.translator.baseUrl,
-      remoteConfig.provider,
-      remoteConfig.maxOutputTokens,
-      remoteConfig.buffer,
-      remoteConfig.maxRetry,
-    );
+    translator = new DolphinAPITranslator(config.translator.baseUrl);
+  } else if (agent === 'openai') {
+    const apiKey = config.translator.apiKey || process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY is not set');
+    }
+    translator = new OpenAITranslator(apiKey);
   } else {
-    throw new Error(
-      `The translator agent: ${config.translator.agent} is not supported`,
-    );
+    throw new Error(`The translator agent: ${agent} is not supported`);
   }
 
   var remainings = Object.values(mergedStrings);
@@ -332,36 +323,4 @@ async function mergeTranslatedFile(
   for (const filePath of xliffFilePaths) {
     await writeTranslatedStringsToExistingFile(translatedStrings, filePath);
   }
-}
-
-async function fetchApiConfig({ baseUrl }: { baseUrl: string }) {
-  const url = new URL(baseUrl);
-  url.pathname += url.pathname.endsWith('/') ? 'config' : '/config';
-  logger.info(`Fetching translator config from ${url}`);
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  if (response.status < 200 || response.status >= 400) {
-    try {
-      const json = await response.json();
-      throw new Error(
-        `Failed to fetch translator config: ${
-          response.status
-        }, body: ${JSON.stringify(json)}`,
-      );
-    } catch (error) {
-      throw new Error(
-        `Failed to fetch translator config: ${response.status}, body: ${error}`,
-      );
-    }
-  }
-  const responseJson = await response.json();
-  const configResult = LLMProviderConfigSchema.safeParse(responseJson);
-  if (!configResult.success) {
-    throw new Error(`Failed to parse localizer config: ${configResult.error}`);
-  }
-  return configResult.data;
 }

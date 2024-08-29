@@ -1,4 +1,4 @@
-import { TranslationProvider } from '@repo/base/config';
+import { TranslationTokenizer } from '@repo/base/config';
 import { Tiktoken, TiktokenModel, encodingForModel } from 'js-tiktoken';
 
 import { LocalizationEntity } from './entity.js';
@@ -6,33 +6,33 @@ import { LocalizationEntity } from './entity.js';
 const encodings: Record<string, Tiktoken> = {};
 
 export function calTokens(
-  provider: TranslationProvider,
+  tokenizer: TranslationTokenizer,
   model: string,
   content: string,
 ) {
-  if (provider === 'openai') {
+  if (tokenizer === 'openai') {
     if (!encodings[model]) {
       encodings[model] = encodingForModel(model as TiktokenModel);
     }
     const enc = encodings[model];
     return enc.encode(content).length;
   } else {
-    throw new Error(`Unknown translator provider: ${provider}`);
+    throw new Error(`Unknown translator tokenizer: ${tokenizer}`);
   }
 }
 
 export function calEntityExpectedTokens(
-  provider: TranslationProvider,
+  tokenizer: TranslationTokenizer,
   model: string,
   entity: LocalizationEntity,
 ) {
   let content = `"${entity.key}" = "${entity.source}"\n`;
-  const sourceTokens = calTokens(provider, model, content);
+  const sourceTokens = calTokens(tokenizer, model, content);
   return sourceTokens;
 }
 
 export function calEntitySourceTokens(
-  provider: TranslationProvider,
+  tokenizer: TranslationTokenizer,
   model: string,
   entity: LocalizationEntity,
 ) {
@@ -41,6 +41,6 @@ export function calEntitySourceTokens(
     content += `// ${note}\n`;
   }
   content += `"${entity.key}" = "${entity.source}"\n\n`;
-  const sourceTokens = calTokens(provider, model, content);
+  const sourceTokens = calTokens(tokenizer, model, content);
   return sourceTokens;
 }

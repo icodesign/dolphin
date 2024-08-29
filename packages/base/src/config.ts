@@ -53,17 +53,15 @@ export const LLMTranslatorConfigSchema = z.object({
   maxOutputTokens: z.number().default(4096),
   buffer: z.number().default(0.3),
   maxRetry: z.number().default(1),
+  tokenizer: z.enum(['openai']).default('openai'),
+  tokenizerModel: z.string().default('gpt-4'), // use for tiktoken cal
 });
 
-const TranslationProviderEnum = z.enum(['openai']);
+const TranslationTokenizerEnum = z.enum(['openai']);
 
-export type TranslationProvider = z.infer<typeof TranslationProviderEnum>;
+export type TranslationTokenizer = z.infer<typeof TranslationTokenizerEnum>;
 
-export const LLMProviderConfigSchema = LLMTranslatorConfigSchema.extend({
-  provider: TranslationProviderEnum,
-});
-
-export type LLMProviderConfig = z.infer<typeof LLMProviderConfigSchema>;
+export type LLMTranslatorConfig = z.infer<typeof LLMTranslatorConfigSchema>;
 
 const DolphinTranslatorConfigSchema = CommonTranslatorConfigSchema.extend({
   agent: z.literal('api'),
@@ -72,6 +70,7 @@ const DolphinTranslatorConfigSchema = CommonTranslatorConfigSchema.extend({
 
 const OpenAITranslatorConfigSchema = CommonTranslatorConfigSchema.extend({
   agent: z.literal('openai'),
+  apiKey: z.string().optional(),
 }).merge(LLMTranslatorConfigSchema);
 
 const TranslatorConfigSchema = z.union([

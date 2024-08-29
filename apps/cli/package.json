@@ -1,6 +1,6 @@
 {
   "name": "@icodesign/dolphin",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "main": "./dist/index.cjs",
   "bin": "./bin/cli.cjs",
   "type": "module",
@@ -25,8 +25,8 @@
     "clean": "rimraf dist",
     "build": "tsup",
     "dev": "tsc -w --preserveWatchOutput",
-    "start": "node dist/index.cjs",
-    "start:debug": "node --inspect-brk dist/index.cjs",
+    "start": "pnpm build && node dist/index.cjs",
+    "start:debug": "pnpm build && node --inspect-brk dist/index.cjs",
     "prepack": "pnpm build",
     "prepublishOnly": "rm -rf ./package && clean-publish --fields 'dependencies,publishConfig' && cp ../../README.md ../../LICENSE ./package",
     "postpublish": "rm -rf ./package",

@@ -1,8 +1,6 @@
 baseLanguage: en
 translator:
-  agent: api
-  baseUrl: http://localhost:3000/v1/
-  mode: interactive
+  agent: openai
 localizations:
   - id: app
     path: TranditionalXcodeDemo/${LANGUAGE}.lproj/Localizable.strings
