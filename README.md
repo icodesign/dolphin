@@ -44,8 +44,7 @@ Here's an example of a configuration file:
 ```yaml
 baseLanguage: en
 translator:
-  agent: api
-  baseUrl: http://localhost:3000/v1/
+  agent: openai
   mode: interactive
 localizations:
   - id: hostapp
@@ -65,11 +64,17 @@ For more details on how to write a configuration file, please check the [Configu
 
 Dolphin defines an interface for translators to implement, which is responsible for translating source strings into target languages.
 
+> I'm still working on adding more translators. PRs are welcome!
+
+#### openai
+
+This is a local translator which uses OpenAI API to translate strings. To use this translator, you need to provide the OpenAI API key as an environment variable (`OPENAI_API_KEY`) or pass it to the translator with the `apiKey` option.
+
 #### api
 
-The `api` translator is a built-in translator that uses the Dolphin API service to translate strings. You need to provide the `baseUrl` to the API endpoint.
+The `api` translator is a built-in translator that uses the Dolphin API (or compatible) service to translate strings. You need to provide the `baseUrl` to the API endpoint.
 
-> Related code of the API service (using Next.js as an example) can be found in the [api folder](https://github.com/icodesign/dolphin/tree/main/apps/api/).
+> Related spec and code of the API service (using Next.js as an example) can be found in the [api folder](https://github.com/icodesign/dolphin/tree/main/apps/api/).
 >
 > You can deploy the API service to your own server or managed platforms (like Vercel) and change the `baseUrl` to your server address.
 >
@@ -77,7 +82,7 @@ The `api` translator is a built-in translator that uses the Dolphin API service 
 >
 > [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Ficodesign%2Fdolphin&env=OPENAI_API_KEY&envDescription=The%20openai%20api%20key&envLink=https%3A%2F%2Fplatform.openai.com%2Fapi-keys)
 
-We're working on adding more agents, especially local translators without the need of cloud deployment. PRs are welcome!
+You can also implement your own API server if needed.
 
 ### Running Dolphin
 
@@ -141,6 +146,7 @@ The source language of the strings, which is used to translate from.
 
 Supported translators:
 
+- **openai**: OpenAI API. You need to provide the OpenAI API key as an environment variable (`OPENAI_API_KEY`) or pass it to the translator with the `apiKey` option.
 - **api**: Dolphin API. You need to provide the `baseUrl` to the API endpoint.
 
 Supported modes:
