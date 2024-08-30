@@ -93,7 +93,7 @@ export class OpenAITranslator implements Translator {
     // Update usage
     this.usage.promptTokens += usage.promptTokens;
     this.usage.completionTokens += usage.completionTokens;
-    this.usage.totalTokens = usage.totalTokens;
+    this.usage.totalTokens += usage.totalTokens;
 
     if (Object.keys(translationResponse).length === 0) {
       throw new Error('Failed to receive translation response object');
