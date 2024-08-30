@@ -95,25 +95,6 @@ export type Config = z.infer<typeof BaseConfigSchema>;
 export async function parseConfig(userConfigPath?: string): Promise<Config> {
   var configPath = userConfigPath;
   if (!configPath) {
-    // search dolphin.y[a]ml under root path
-    // check if the file exists
-    const searchFiles = ['dolphin.yml', 'dolphin.yaml'];
-    const rootPath = process.cwd();
-    logger.info(
-      `No config file provided. Searching config file (dolphin.y[a]ml) under current directory(${rootPath})...`,
-    );
-    for (const file of searchFiles) {
-      const attemptConfigPath = path.join(rootPath, file);
-      try {
-        await fs.promises.access(attemptConfigPath);
-        configPath = attemptConfigPath;
-        break;
-      } catch (error) {
-        continue;
-      }
-    }
-  }
-  if (!configPath) {
     throw new Error(
       `Missing config file. You can either set using --config or put dolphin.y[a]ml under the root path of the project.`,
     );
@@ -121,6 +102,32 @@ export async function parseConfig(userConfigPath?: string): Promise<Config> {
   if (!path.isAbsolute(configPath)) {
     configPath = path.join(process.cwd(), configPath);
   }
+  // Check if configPath is a directory
+  const stats = await fs.promises.stat(configPath);
+  if (stats.isDirectory()) {
+    logger.info(
+      `No yaml config file provided. Searching config file (dolphin.y[a]ml) under the directory(${configPath})...`,
+    );
+    const searchFiles = ['dolphin.yml', 'dolphin.yaml'];
+    let found = false;
+    for (const file of searchFiles) {
+      const attemptConfigPath = path.join(configPath, file);
+      try {
+        await fs.promises.access(attemptConfigPath);
+        configPath = attemptConfigPath;
+        found = true;
+        break;
+      } catch (error) {
+        continue;
+      }
+    }
+    if (!found) {
+      throw new Error(
+        `No dolphin.y[a]ml found in the specified directory: ${configPath}`,
+      );
+    }
+  }
+
   logger.info(`Using config file at ${configPath}`);
   let fileContent;
   try {
