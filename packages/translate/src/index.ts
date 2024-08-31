@@ -217,7 +217,8 @@ async function translateStrings(
       var approved = 0;
       var declined = 0;
       var refineNeeded = 0;
-      for (const entity of translations) {
+      for (let index = 0; index < translations.length; index++) {
+        const entity = translations[index];
         if (entity.needsReview) {
           logger.info(
             `Skip reviewing ${entity.key} because all target languages are skipped.`,
@@ -269,6 +270,11 @@ async function translateStrings(
                 value: LOCALITION_REVIEW_SUBSTATE_DECLINED,
                 description: 'The translation will be discarded',
               },
+              {
+                name: 'Approve All',
+                value: 'approveAll',
+                description: 'Skip reviewing all translations for this string',
+              },
             ],
           },
           {
@@ -298,6 +304,10 @@ async function translateStrings(
           entity.addNotes([auditSuggestion]);
           remainings.push(entity);
           refineNeeded += 1;
+        } else if (reviewResult === 'approveAll') {
+          reviewed.push(...translations.slice(index));
+          approved += translations.length - index;
+          break;
         }
       }
 
