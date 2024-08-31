@@ -1,9 +1,9 @@
-import { Config, parseConfig } from '@repo/base/config';
+import { Config, LocalizationFormat, parseConfig } from '@repo/base/config';
 import { consoleLogger, logger } from '@repo/base/logger';
 import spinner from '@repo/base/spinner';
 import { createTemporaryOutputFolder, replaceBundle } from '@repo/ioloc';
 import {
-  ExportLocalizationsResult,
+  LocalizationBundlePath,
   exportLocalizationBundle,
   importLocalizationBundle,
   textHash,
@@ -38,9 +38,14 @@ export async function loadConfig({ path }: { path?: string }) {
 
 export async function exportLocalizations(config: Config) {
   var startTime = performance.now();
-  spinner.update('Exporting localizations').start();
+  const message =
+    config.localizations.filter((x) => x.format === LocalizationFormat.XCODE)
+      .length > 0
+      ? `Exporting localizations (Xcode project may take a while)`
+      : 'Exporting localizations';
+  spinner.update(message).start();
   const baseFolder = path.dirname(config.path);
-  var exportedResults: ExportLocalizationsResult[] = [];
+  var exportedResults: LocalizationBundlePath[] = [];
   let baseOutputFolder = config.exportFolder || '.dolphin';
   if (!path.isAbsolute(baseOutputFolder)) {
     baseOutputFolder = path.join(baseFolder, baseOutputFolder);
@@ -81,7 +86,12 @@ export async function exportLocalizations(config: Config) {
       .map((result) => result.bundlePath)
       .join(', ')}`,
   );
-  return baseOutputFolder;
+  return {
+    baseOutputFolder,
+    intermediateBundlePaths: exportedResults.map(
+      (x) => x.intermediateBundlePath,
+    ),
+  };
 }
 
 export async function translateLocalizations({
@@ -104,7 +114,7 @@ export async function translateLocalizations({
   const translated = translationResult.mergedStrings;
   const translatedCount = Object.keys(translated).length;
   if (translatedCount === 0) {
-    spinner.succeed(chalk.green('No string needs to be translated'));
+    spinner.succeed(chalk.green('No string needs to be translated\n'));
     return;
   }
   const duration = formattedDuration(performance.now() - startTime);
@@ -128,20 +138,34 @@ export async function importLocalizations({
   translationBundle,
 }: {
   config: Config;
-  translationBundle: string;
+  translationBundle: {
+    baseOutputFolder: string;
+    intermediateBundlePaths: (string | undefined)[];
+  };
 }) {
   const startTime = performance.now();
-  spinner.next('Merging translations').start();
+  const containsXcodeFormat =
+    config.localizations.filter((x) => x.format === LocalizationFormat.XCODE)
+      .length > 0;
+  let message = 'Merging translations';
+  if (containsXcodeFormat) {
+    message += ' (Xcode project may take a while)';
+  }
+  spinner.next(message).start();
   logger.info(`Merging localization bundles...`);
   for (var index = 0; index < config.localizations.length; index++) {
     const localizationConfig = config.localizations[index];
     const bundlePath = path.join(
-      translationBundle,
+      translationBundle.baseOutputFolder,
       localizationFolder(localizationConfig.id),
     );
     await importLocalizationBundle({
       config: localizationConfig,
-      localizationBundlePath: bundlePath,
+      localizationBundlePath: {
+        bundlePath,
+        intermediateBundlePath:
+          translationBundle.intermediateBundlePaths[index],
+      },
       baseLanguage: config.baseLanguage,
       baseFolder: path.dirname(config.path),
     });

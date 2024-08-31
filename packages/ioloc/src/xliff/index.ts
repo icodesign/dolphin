@@ -112,7 +112,12 @@ export function stringifyXliff2(
   options?: StringifyOptions,
 ) {
   const doc = xliff.name === 'xliff' ? { elements: [xliff] } : xliff;
-  const opt = Object.assign({ spaces: 2 }, options, { compact: false });
+  const opt = Object.assign({ spaces: 2 }, options, {
+    compact: false,
+    attributeValueFn: function (value: string) {
+      return encodeAttribute(value);
+    },
+  });
   return js2xml(doc, opt);
 }
 
@@ -121,7 +126,12 @@ export function stringifyXliff1(
   options?: StringifyOptions,
 ) {
   const doc = xliff.name === 'xliff' ? { elements: [xliff] } : xliff;
-  const opt = Object.assign({ spaces: 2 }, options, { compact: false });
+  const opt = Object.assign({ spaces: 2 }, options, {
+    compact: false,
+    attributeValueFn: function (value: string) {
+      return encodeAttribute(value);
+    },
+  });
   return js2xml(doc, opt);
 }
 
@@ -312,3 +322,13 @@ function mergeSegments(source: Segment, target: Segment) {
   }
   return source;
 }
+
+const encodeAttribute = function (attributeValue: string) {
+  return attributeValue
+    .replace(/&quot;/g, '"') // convert quote back before converting amp
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+};

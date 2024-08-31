@@ -71,8 +71,20 @@ export async function translateBundle(
   }
   logger.info(`Merging ${xliffs.length} parsed files`);
   const mergedStrings = convertXliffsToEntities(xliffs);
-  const count = Object.keys(mergedStrings).length;
-  spinner?.succeed(chalk.green(`${count} strings to be translated\n`));
+  let untranslatedMergedStrings: LocalizationEntityDictionary = {};
+  for (const [key, entity] of Object.entries(mergedStrings)) {
+    if (entity.untranslatedLanguages.length > 0) {
+      untranslatedMergedStrings[key] = entity;
+    }
+  }
+  const count = Object.keys(untranslatedMergedStrings).length;
+  spinner?.succeed(
+    chalk.green(
+      `${count} strings to be translated, total: ${
+        Object.keys(mergedStrings).length
+      }\n`,
+    ),
+  );
   if (count === 0) {
     logger.info(`No strings found, skipping translation`);
     return {

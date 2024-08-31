@@ -1,28 +1,42 @@
 import { LocalizationConfig, LocalizationFormat } from '@repo/base/config';
+import { logger } from '@repo/base/logger';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { BasicExporter, ExportConfig, ExportParser } from './export/index.js';
+import {
+  BasicExporter,
+  ExportConfig,
+  ExportParser,
+  XcodeExporter,
+} from './export/index.js';
 import { JsonParser } from './export/parser/json.js';
 import { AppleStringsParser } from './export/parser/strings.js';
 import { TextParser } from './export/parser/text.js';
 import { XliffParser } from './export/parser/xliff.js';
 import { XlocParser } from './export/parser/xloc.js';
-import { BasicImporter, ImportConfig, ImportMerger } from './import/index.js';
+import {
+  BasicImporter,
+  ImportConfig,
+  ImportMerger,
+  XclocMerger,
+  XcodeImporter,
+} from './import/index.js';
 import { JsonMerger } from './import/merger/json.js';
 import { AppleStringsMerger } from './import/merger/strings.js';
 import { TextMerger } from './import/merger/text.js';
 import { XliffMerger } from './import/merger/xliff.js';
-import { XcodeImportLocalizations } from './xcode.js';
+import { createTemporaryOutputFolder } from './utils.js';
+import { XcodeExportLocalizations, XcodeImportLocalizations } from './xcode.js';
 
 export * from './utils.js';
 
-export type ExportLocalizationsResult = {
+export type LocalizationBundlePath = {
   bundlePath: string;
+  intermediateBundlePath?: string; // Path to intermediate output artifacts. For example, after exporting from Xcode, the xcloc files will be stored in this folder and can be used for importing localizations afterwards.
 };
 
 export interface ExportLocalizations {
-  export(): Promise<ExportLocalizationsResult>;
+  export(): Promise<LocalizationBundlePath>;
 }
 
 export async function exportLocalizationBundle({
@@ -35,7 +49,7 @@ export async function exportLocalizationBundle({
   baseLanguage: string;
   baseFolder: string;
   outputFolder: string;
-}): Promise<ExportLocalizationsResult> {
+}): Promise<LocalizationBundlePath> {
   const format = config.format;
   if (!('languages' in config)) {
     throw new Error(
@@ -46,7 +60,7 @@ export async function exportLocalizationBundle({
   if (!path.isAbsolute(bundlePath)) {
     bundlePath = path.join(baseFolder, bundlePath);
   }
-  let exportConfig: ExportConfig = {
+  const exportConfig = {
     sourceLanguage: {
       code: baseLanguage,
       path: bundlePath,
@@ -64,10 +78,14 @@ export async function exportLocalizationBundle({
     basePath: baseFolder,
   };
   let parser: ExportParser;
-  if (
-    format === LocalizationFormat.XCODE ||
-    format === LocalizationFormat.XCLOC
-  ) {
+  if (format === LocalizationFormat.XCODE) {
+    const exporter = new XcodeExporter({
+      projectPath: bundlePath,
+      config: exportConfig,
+      outputFolder,
+    });
+    return await exporter.export();
+  } else if (format === LocalizationFormat.XCLOC) {
     parser = new XlocParser();
   } else if (format === LocalizationFormat.TEXT) {
     parser = new TextParser();
@@ -95,7 +113,7 @@ export interface ImportLocalizationsResult {
 }
 
 export interface ImportLocalizations {
-  import(localizationBundlePath: string): Promise<ImportLocalizationsResult>;
+  import(): Promise<ImportLocalizationsResult>;
 }
 
 export async function importLocalizationBundle({
@@ -105,7 +123,7 @@ export async function importLocalizationBundle({
   baseFolder,
 }: {
   config: LocalizationConfig;
-  localizationBundlePath: string;
+  localizationBundlePath: LocalizationBundlePath;
   baseLanguage: string;
   baseFolder: string;
 }): Promise<ImportLocalizationsResult> {
@@ -114,7 +132,7 @@ export async function importLocalizationBundle({
       `languages is required for ${config.format} format in the configuration`,
     );
   }
-  let importBundlePath = localizationBundlePath;
+  let importBundlePath = localizationBundlePath.bundlePath;
   if (!path.isAbsolute(importBundlePath)) {
     importBundlePath = path.join(baseFolder, importBundlePath);
   }
@@ -140,16 +158,16 @@ export async function importLocalizationBundle({
     }),
   };
   let merger: ImportMerger;
-  if (
-    config.format === LocalizationFormat.XCODE ||
-    config.format === LocalizationFormat.XCLOC
-  ) {
-    const importLocalizations = new XcodeImportLocalizations(
-      config,
+  if (config.format === LocalizationFormat.XCODE) {
+    const importer = new XcodeImporter({
+      config: importConfig,
+      localizationBundlePath,
+      projectPath: config.path,
       baseFolder,
-    );
-    const result = await importLocalizations.import(importBundlePath);
-    return result;
+    });
+    return await importer.import();
+  } else if (config.format === LocalizationFormat.XCLOC) {
+    merger = new XclocMerger();
   } else if (config.format === LocalizationFormat.TEXT) {
     merger = new TextMerger();
   } else if (config.format === LocalizationFormat.STRINGS) {
@@ -162,8 +180,7 @@ export async function importLocalizationBundle({
     throw new Error(`Unsupported budnle format: ${config.format}`);
   }
   const importer = new BasicImporter({ config: importConfig, merger });
-  const result = await importer.import();
-  return result;
+  return await importer.import();
 }
 
 export async function replaceBundle(bundlePath: string, other: string) {

@@ -2,23 +2,14 @@ import { XcodeProject } from '@bacons/xcode';
 import { CommonLocalizationConfig } from '@repo/base/config';
 import { logger } from '@repo/base/logger';
 import child_process from 'child_process';
+import { spawn } from 'child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { ExportLocalizations, ImportLocalizations } from './index.js';
 import { createOutputFolderIfNeed } from './utils.js';
 
 const XcodeCommonArgs =
   '-disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates';
-
-export type ExportOptions = {
-  // The base language for translation. By default, it's using default localization language of the project. Normally you don't need provide this option.
-  baseLanguage?: string;
-};
-
-export type ExportResult = {
-  bundlePath: string;
-};
 
 export type ImportOptions = {};
 
@@ -26,17 +17,20 @@ export type ImportResult = {
   code: number;
 };
 
-export class XcodeExportLocalizations implements ExportLocalizations {
+export class XcodeExportLocalizations {
   constructor(
-    private config: CommonLocalizationConfig,
+    private projectPath: string,
     private baseFolder: string,
     private outputFolder?: string,
   ) {}
 
-  async export(): Promise<ExportResult> {
+  async export(): Promise<{
+    bundlePath: string;
+    languages: string[];
+  }> {
     // check if xcodebuild command is available
     try {
-      child_process.execSync('/usr/bin/xcodebuild');
+      child_process.execSync('/usr/bin/xcodebuild -version');
     } catch (e) {
       throw new Error(
         'xcodebuild command is not available. Make sure you have Xcode installed.',
@@ -45,12 +39,12 @@ export class XcodeExportLocalizations implements ExportLocalizations {
 
     const outputFolder = await createOutputFolderIfNeed(this.outputFolder);
 
-    const projectPath = path.isAbsolute(this.config.path)
-      ? this.config.path
-      : path.join(this.baseFolder, this.config.path);
+    const absoluteProjectPath = path.isAbsolute(this.projectPath)
+      ? this.projectPath
+      : path.join(this.baseFolder, this.projectPath);
     // get all known regions
     const xcodeProject = XcodeProject.open(
-      path.join(projectPath, 'project.pbxproj'),
+      path.join(absoluteProjectPath, 'project.pbxproj'),
     );
     const developmentRegion = xcodeProject.rootObject.props.developmentRegion;
     const knownRegions = xcodeProject.rootObject.props.knownRegions;
@@ -58,7 +52,7 @@ export class XcodeExportLocalizations implements ExportLocalizations {
 
     // run exportLocaizations command
     let exportRegions: string[] = [];
-    let command = `/usr/bin/xcodebuild -exportLocalizations -project ${projectPath} -localizationPath ${outputFolder} ${XcodeCommonArgs}`;
+    let command = `/usr/bin/xcodebuild -exportLocalizations -project ${absoluteProjectPath} -localizationPath ${outputFolder} ${XcodeCommonArgs}`;
     for (const region of knownRegions) {
       if (region === 'Base') {
         // skip base region
@@ -101,28 +95,33 @@ export class XcodeExportLocalizations implements ExportLocalizations {
     }
     return {
       bundlePath: outputFolder,
+      languages: exportRegions,
     };
   }
 }
 
-export class XcodeImportLocalizations implements ImportLocalizations {
-  constructor(
-    private config: CommonLocalizationConfig,
-    private baseFolder: string,
-  ) {}
-  async import(localizationBundlePath: string): Promise<ImportResult> {
+export class XcodeImportLocalizations {
+  async import({
+    localizationBundlePath,
+    projectPath,
+    baseFolder,
+  }: {
+    localizationBundlePath: string;
+    projectPath: string;
+    baseFolder: string;
+  }): Promise<ImportResult> {
     // check if xcodebuild command is available
     try {
-      child_process.execSync('/usr/bin/xcodebuild');
+      child_process.execSync('/usr/bin/xcodebuild -version');
     } catch (e) {
       throw new Error(
         'xcodebuild command is not available. Make sure you have Xcode installed.',
       );
     }
 
-    const projectPath = path.isAbsolute(this.config.path)
-      ? this.config.path
-      : path.join(this.baseFolder, this.config.path);
+    const absoluteProjectPath = path.isAbsolute(projectPath)
+      ? projectPath
+      : path.join(baseFolder, projectPath);
     // run importLocaizations command
     const xclocPaths = (
       await fs.promises.readdir(localizationBundlePath, { withFileTypes: true })
@@ -135,7 +134,7 @@ export class XcodeImportLocalizations implements ImportLocalizations {
       .sort();
     logger.info(`Found xcloc files: ${xclocPaths.join(', ')}`);
     for (const xclocPath of xclocPaths) {
-      const command = `/usr/bin/xcodebuild -importLocalizations -project ${projectPath} -localizationPath ${xclocPath} -mergeImport ${XcodeCommonArgs}`;
+      const command = `/usr/bin/xcodebuild -importLocalizations -project ${absoluteProjectPath} -localizationPath ${xclocPath} -mergeImport ${XcodeCommonArgs}`;
       logger.info(`Running command: ${command}`);
       const result = await exec(command);
       if (result.code !== 0) {
@@ -150,21 +149,13 @@ export class XcodeImportLocalizations implements ImportLocalizations {
   }
 }
 
-async function exec(command: string) {
-  const commands = command.split(' ');
-  if (!commands[0]) {
-    throw new Error(`Invalid command: ${command}`);
-  }
-  let child = child_process.spawn(commands[0], commands.slice(1));
-  let error = '';
-  for await (const chunk of child.stderr) {
-    error += chunk;
-  }
-  logger.error(error);
-  const exitCode = await new Promise((resolve, reject) => {
-    child.on('close', resolve);
+async function exec(command: string): Promise<{ code: number }> {
+  return new Promise((resolve) => {
+    const [cmd, ...args] = command.split(' ');
+    const childProcess = spawn(cmd, args, { stdio: 'inherit' });
+
+    childProcess.on('close', (code) => {
+      resolve({ code: code ?? 0 });
+    });
   });
-  return {
-    code: exitCode,
-  };
 }

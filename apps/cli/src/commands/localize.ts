@@ -63,7 +63,7 @@ async function handleLocalizeCommand(args: CmdArgs) {
   });
   const translationBundle = await exportLocalizations(config);
   await translateLocalizations({
-    baseOutputFolder: translationBundle,
+    baseOutputFolder: translationBundle.baseOutputFolder,
     config,
   });
   await importLocalizations({
