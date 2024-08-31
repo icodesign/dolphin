@@ -219,9 +219,9 @@ async function translateStrings(
       var refineNeeded = 0;
       for (let index = 0; index < translations.length; index++) {
         const entity = translations[index];
-        if (entity.needsReview) {
+        if (!entity.needsReview) {
           logger.info(
-            `Skip reviewing ${entity.key} because all target languages are skipped.`,
+            `Skip reviewing ${entity.key} because all target languages are final.`,
           );
           continue;
         }

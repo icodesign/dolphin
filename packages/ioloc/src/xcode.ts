@@ -20,6 +20,7 @@ export type ImportResult = {
 export class XcodeExportLocalizations {
   constructor(
     private projectPath: string,
+    private langauges: string[],
     private baseFolder: string,
     private outputFolder?: string,
   ) {}
@@ -49,16 +50,20 @@ export class XcodeExportLocalizations {
     const developmentRegion = xcodeProject.rootObject.props.developmentRegion;
     const knownRegions = xcodeProject.rootObject.props.knownRegions;
     logger.info(`Found known regions: ${knownRegions.join(', ')}`);
+    // make sure all languages are in known regions
+    const unknownLanguages = this.langauges.filter(
+      (lang) => !knownRegions.includes(lang),
+    );
+    if (unknownLanguages.length > 0) {
+      throw new Error(
+        `The following languages are not in xcode project regions: ${unknownLanguages.join(', ')}`,
+      );
+    }
 
     // run exportLocaizations command
     let exportRegions: string[] = [];
     let command = `/usr/bin/xcodebuild -exportLocalizations -project ${absoluteProjectPath} -localizationPath ${outputFolder} ${XcodeCommonArgs}`;
-    for (const region of knownRegions) {
-      if (region === 'Base') {
-        // skip base region
-        logger.info(`Skipping base region`);
-        continue;
-      }
+    for (const region of this.langauges) {
       command += ` -exportLanguage ${region}`;
       exportRegions.push(region);
     }

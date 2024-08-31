@@ -106,14 +106,14 @@ export class XcodeExporter implements ExportLocalizations {
     logger.info(`Exporting Xcode project to ${xcodeOutputFolder}`);
     const xcodeExporter = new XcodeExportLocalizations(
       this.projectPath,
+      [
+        this.config.sourceLanguage.code,
+        ...this.config.targetLanguages.map((lang) => lang.code),
+      ],
       xcodeOutputFolder,
     );
     const result = await xcodeExporter.export();
-    // const result = {
-    //   bundlePath:
-    //     '/var/folders/x3/d3jx55kn439_kdfysr655ld00000gn/T/dolphin-export-mjIgGq/',
-    //   languages: ['en', 'zh-Hans', 'ko', 'ja'],
-    // };
+
     logger.info(
       `Exported Xcode project at ${result.bundlePath}, languages: ${result.languages}`,
     );

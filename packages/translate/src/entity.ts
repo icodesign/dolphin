@@ -159,7 +159,7 @@ export function convertXliffsToEntities(
       throw new Error(`Cannot merge file without target language.`);
     }
     for (const file of xliff.elements || []) {
-      const startKeys = [file.attributes.id];
+      const startKeys = [sourceLanguage, file.attributes.id];
       for (const element of file.elements || []) {
         const entities = convertXliffElementToEntities(
           element,
@@ -325,7 +325,7 @@ export async function updateTranslatedStrings(
     return;
   }
   xliff.elements.map((file) => {
-    const startKeys = [sourceLanguage, targetLanguage, file.attributes.id];
+    const startKeys = [sourceLanguage, file.attributes.id];
     file.elements = file.elements.map((element) => {
       if (element.name === 'unit' || element.name === 'group') {
         return updateTranslatedElement(
