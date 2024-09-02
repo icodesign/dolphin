@@ -13,7 +13,7 @@
       </segment>
     </unit>
     <unit id="Docs/Header/link">
-      <segment state="initial">
+      <segment state="translated">
         <source>The link to Google</source>
         <target>前往 Google</target>
       </segment>

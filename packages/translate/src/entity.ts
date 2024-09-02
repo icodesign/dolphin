@@ -105,6 +105,13 @@ export class LocalizationEntity {
     });
   }
 
+  get isAllTranslated(): boolean {
+    return this.targetLanguages.every((lang) => {
+      const target = this.target[lang]!;
+      return this.isTranslated(target);
+    });
+  }
+
   isTargetFinal(target: LocalizationTarget): boolean {
     return target.state === LOCALIZATION_STATE_FINAL;
   }
@@ -241,7 +248,7 @@ function convertXliffElementToEntities(
               notes,
             },
           }
-        : {},
+        : { [targetLanguage]: { notes: [] } },
     });
     return [entity];
   } else {

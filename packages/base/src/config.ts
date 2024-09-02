@@ -11,6 +11,7 @@ export enum LocalizationFormat {
   XCODE = 'xcode', // Xcode project
   XCLOC = 'xcloc', // Xcloc file
   STRINGS = 'strings', // Apple strings files (.strings)
+  XCSTRINGS = 'xcstrings', // Apple strings catalog
   XLIFF = 'xliff', // XLIFF file
   JSON = 'json', // JSON file
 }

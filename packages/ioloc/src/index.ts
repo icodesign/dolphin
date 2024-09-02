@@ -12,6 +12,7 @@ import {
 import { JsonParser } from './export/parser/json.js';
 import { AppleStringsParser } from './export/parser/strings.js';
 import { TextParser } from './export/parser/text.js';
+import { XCStringsParser } from './export/parser/xcstrings.js';
 import { XliffParser } from './export/parser/xliff.js';
 import { XlocParser } from './export/parser/xloc.js';
 import {
@@ -24,6 +25,7 @@ import {
 import { JsonMerger } from './import/merger/json.js';
 import { AppleStringsMerger } from './import/merger/strings.js';
 import { TextMerger } from './import/merger/text.js';
+import { XCStringsMerger } from './import/merger/xcstrings.js';
 import { XliffMerger } from './import/merger/xliff.js';
 import { createTemporaryOutputFolder } from './utils.js';
 import { XcodeExportLocalizations, XcodeImportLocalizations } from './xcode.js';
@@ -91,6 +93,8 @@ export async function exportLocalizationBundle({
     parser = new TextParser();
   } else if (format === LocalizationFormat.STRINGS) {
     parser = new AppleStringsParser();
+  } else if (format === LocalizationFormat.XCSTRINGS) {
+    parser = new XCStringsParser();
   } else if (format === LocalizationFormat.XLIFF) {
     parser = new XliffParser();
   } else if (format === LocalizationFormat.JSON) {
@@ -172,6 +176,8 @@ export async function importLocalizationBundle({
     merger = new TextMerger();
   } else if (config.format === LocalizationFormat.STRINGS) {
     merger = new AppleStringsMerger();
+  } else if (config.format === LocalizationFormat.XCSTRINGS) {
+    merger = new XCStringsMerger();
   } else if (config.format === LocalizationFormat.XLIFF) {
     merger = new XliffMerger();
   } else if (config.format === LocalizationFormat.JSON) {

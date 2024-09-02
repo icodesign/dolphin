@@ -1,7 +1,7 @@
 import { LLMTranslatorConfig } from '@repo/base/config';
 import { StreamObjectResult } from 'ai';
 
-interface TranslationPayload {
+export interface TranslationPayload {
   context?: string;
   sourceLanguage: string;
   targetLanguages: string[];
@@ -15,6 +15,6 @@ interface TranslationPayload {
 export interface TranslationProvider {
   translate(
     payload: TranslationPayload,
-  ): Promise<StreamObjectResult<Record<string, Record<string, string>>>>;
+  ): Promise<StreamObjectResult<any, any, any>>;
   config(): Promise<LLMTranslatorConfig>;
 }

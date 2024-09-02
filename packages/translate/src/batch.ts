@@ -133,7 +133,7 @@ export function createBatches(
           key: e.key,
           source: e.source.value,
           notes: [
-            ...new Set(targetLanguages.flatMap((t) => entity.target[t]!.notes)),
+            ...new Set(targetLanguages.flatMap((t) => e.target[t]!.notes)),
           ],
         })),
         sourceTokens: currentSourceTokens,

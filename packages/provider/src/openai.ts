@@ -4,7 +4,7 @@ import { logger } from '@repo/base/logger';
 import { LanguageModel, streamObject } from 'ai';
 import { z } from 'zod';
 
-import { TranslationProvider } from '.';
+import { TranslationPayload, TranslationProvider } from '.';
 
 export class OpenAITranslationProvider implements TranslationProvider {
   private openai: OpenAIProvider;
@@ -29,17 +29,37 @@ export class OpenAITranslationProvider implements TranslationProvider {
     return config;
   }
 
-  async translate(payload: {
-    context?: string;
-    sourceLanguage: string;
-    targetLanguages: string[];
-    contents: {
-      key: string;
-      source: string;
-      notes?: string[];
-    }[];
-  }) {
-    let instructions = `As an app/website translator, your task is to translate texts to target languages, considering context and developer notes for accuracy and cultural appropriateness. It's essential to preserve original format, including line breaks, separators, escaping characters and localization symbols, otherwise, user interface may break.\nSource texts are in key=value format. Translate only the 'value', keeping the 'key' as is. Lines starting with "//" are developer notes for translation guidance.\nFor example, 'key=Hello "%@"\\nWelcome!' can be translate to 'key=你好 "%@"\\n欢迎!' in Chinese. \nOutput should be in JSON format: each source key links to an object with target languages as keys and translated texts as values. \n`;
+  async translate(payload: TranslationPayload) {
+    let instructions = `As an app/website translator, your task is to translate texts to target languages, considering context and developer notes for accuracy and cultural appropriateness. It's essential to preserve original format, including line breaks, separators, escaping characters and localization symbols, otherwise, user interface may break.
+
+Source texts are in key=value format, value may contain placeholders for dynamic content and can extend to multiple lines. Translate only the 'value', keeping the 'key' as is. Lines starting with "//" are developer notes for translation guidance.
+
+Example1:
+
+====
+// %@ is a placeholder for name
+key1=Hello "%@"\\nWelcome!
+
+key2=Follow the rules:
+
+* If the text is a greeting, use "Hello" in Chinese.
+
+* If the text is a farewell, use "Goodbye" in Chinese.
+====
+
+can be translate to the following in Chinese:
+
+====
+key1=你好 "%@"\\n欢迎!
+
+key2=遵守以下规则:
+
+* 如果文本是问候语，使用“你好”。
+
+* 如果文本是告别语，使用“再见”。
+====
+
+Output should be in JSON format: each source key links to an object with target languages as keys and translated texts as values. \n`;
     if (payload.context) {
       instructions += `\nTranslation context: \n${payload.context}\n`;
     }
@@ -65,6 +85,8 @@ export class OpenAITranslationProvider implements TranslationProvider {
         z.string(),
       ),
     );
+    logger.info(`Translating with instructions: ${instructions}`);
+    logger.info(`Translating with user content: ${userContent}`);
     const result = await streamObject({
       model: this.model,
       mode: 'json',

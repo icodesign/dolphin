@@ -115,7 +115,7 @@ export function stringifyXliff2(
   const opt = Object.assign({ spaces: 2 }, options, {
     compact: false,
     attributeValueFn: function (value: string) {
-      return encodeAttribute(value);
+      return encodeXliffAttributeValue(value);
     },
   });
   return js2xml(doc, opt);
@@ -129,7 +129,7 @@ export function stringifyXliff1(
   const opt = Object.assign({ spaces: 2 }, options, {
     compact: false,
     attributeValueFn: function (value: string) {
-      return encodeAttribute(value);
+      return encodeXliffAttributeValue(value);
     },
   });
   return js2xml(doc, opt);
@@ -323,7 +323,7 @@ function mergeSegments(source: Segment, target: Segment) {
   return source;
 }
 
-const encodeAttribute = function (attributeValue: string) {
+export const encodeXliffAttributeValue = function (attributeValue: string) {
   return attributeValue
     .replace(/&quot;/g, '"') // convert quote back before converting amp
     .replace(/&/g, '&amp;')
@@ -331,4 +331,13 @@ const encodeAttribute = function (attributeValue: string) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
+};
+
+export const decodeXliffAttributeValue = function (attributeValue: string) {
+  return attributeValue
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
 };

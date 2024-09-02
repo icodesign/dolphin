@@ -13,6 +13,7 @@ import {
   LOCALITION_REVIEW_SUBSTATE_DECLINED,
   LOCALITION_REVIEW_SUBSTATE_REFINE_NEEDED,
   LOCALIZATION_STATE_FINAL,
+  LOCALIZATION_STATE_INITIAL,
   LOCALIZATION_STATE_REVIEWED,
   LocalizationEntity,
   LocalizationEntityDictionary,
@@ -225,6 +226,12 @@ async function translateStrings(
           );
           continue;
         }
+        if (!entity.isAllTranslated) {
+          logger.info(
+            `Skip reviewing ${entity.key} because not all target languages are translated.`,
+          );
+          continue;
+        }
         var message = `[${
           reviewed.length + 1
         }/${total}] [Interactive Mode] Reviewing translation:\n`;
@@ -233,7 +240,7 @@ async function translateStrings(
         }
         message += `${chalk.yellow(`${entity.source.code} (Source)`)}\n${
           entity.source.value
-        }\n\n`;
+        }\n`;
         const notes = entity.allNotes;
         if (notes.length > 0) {
           message += `Notes:\n`;
@@ -245,9 +252,9 @@ async function translateStrings(
         for (const lang in entity.target) {
           const target = entity.target[lang]!;
           if (target.state === LOCALIZATION_STATE_FINAL) {
-            message += `${chalk.green(lang)} (Skipped)\n${target.value}\n\n`;
+            message += `${chalk.green(lang)} [Skipped]\n${target.value}\n`;
           } else {
-            message += `${chalk.red(lang)}\n${target.value}\n\n`;
+            message += `${chalk.red(lang)}\n${target.value}\n`;
           }
         }
         const reviewResult = await select(
@@ -286,11 +293,12 @@ async function translateStrings(
           reviewed.push(entity);
           approved += 1;
         } else if (reviewResult === LOCALITION_REVIEW_SUBSTATE_DECLINED) {
-          entity.updateState(LOCALIZATION_STATE_REVIEWED, reviewResult);
+          entity.updateState(LOCALIZATION_STATE_INITIAL, reviewResult);
           reviewed.push(entity);
           declined += 1;
         } else if (reviewResult === LOCALITION_REVIEW_SUBSTATE_REFINE_NEEDED) {
           // ask for suggestions
+          spinner?.stop({ persist: true });
           const auditSuggestion = await input(
             {
               message:
@@ -300,7 +308,7 @@ async function translateStrings(
               clearPromptOnDone: true,
             },
           );
-          entity.updateState(LOCALIZATION_STATE_REVIEWED, reviewResult);
+          entity.updateState(LOCALIZATION_STATE_INITIAL, reviewResult);
           entity.addNotes([auditSuggestion]);
           remainings.push(entity);
           refineNeeded += 1;

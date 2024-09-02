@@ -7,6 +7,7 @@ export interface Spinner {
   update(message?: string, options?: { logging: boolean }): Spinner;
   fail(message?: string, options?: { logging: boolean }): Spinner;
   succeed(message?: string, options?: { logging: boolean }): Spinner;
+  stop(options?: { persist?: boolean }): Spinner;
 }
 
 class OraSpinner {
@@ -53,6 +54,15 @@ class OraSpinner {
     this.ora.succeed(message);
     if (message && options.logging) {
       logger.info(message);
+    }
+    return this;
+  }
+
+  stop(options?: { persist?: boolean }) {
+    if (options?.persist !== undefined && options.persist) {
+      this.ora.stopAndPersist();
+    } else {
+      this.ora.stop();
     }
     return this;
   }
