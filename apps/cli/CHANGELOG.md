@@ -1,5 +1,11 @@
 # @icodesign/dolphin
 
+## 0.7.0
+
+### Minor Changes
+
+- 2f0fad3: Add support for xcstrings format
+
 ## 0.6.0
 
 ### Minor Changes
